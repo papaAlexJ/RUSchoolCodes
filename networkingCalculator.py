@@ -248,7 +248,13 @@ def main():
 		case "dd":
 			input_ = input_csv(str(input("Enter the name of the community graph csv file:\n")))
 			print(degree_distribution(input_))
-		case "s":##TODO
+        case "sas":
+            p = float(input("Enter the per-day probability of disease transmission: \n"))
+            q = float(input("Enter the per-day probability of recovery: \n"))
+            r = float(input("Enter the per-day probability the node has died:\n"))
+            c = int(input("Enter the number of contacts each node has per day:\n"))
+            print(sas(p,q,r,c))
+        case "s":##TODO
 			k = np.zeros((3,3))
 			k[0][1] = k[0][2] = k[2][0] = k[2][1] = 0.5
 			k = page_rank(k, 2)
