@@ -6,7 +6,7 @@ import os
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
 def output(file: str):
-	i = rn.randint(100, 999)
+	i = rn.randint(000, 999)
 	out = os.path.join(current_directory, (file + str(i) + ".csv"))
 
 	return out
@@ -32,28 +32,30 @@ def matrix(x: int):
 	return d
 
 def community_matrix():
+	print("Community Matrix:")
 	i = 0
 	out = output("community_matrix")
 	
 	size = int(input("Input the total number of nodes: \n"))
 
-	community = np.zeros((size,size), dtype = bool)
+	community = np.zeros((size,size), dtype = int)
 	
 	while (i<size):
 		j = 0 
 		while (j<size):
 			prompt = str(input(f"Does node {i} connect to node {j}? (y/n): \n"))
-			match prompt.lower():
-				case 'y':
-					community[i][j] = True
-					j+=1
-				case 'n':
-					j+=1
-				case _:
-					print("Try again\n")
+			if prompt == 'y':
+				prompt2 = str(input(f"Is this relationship positive? (y/n): \n"))
+				match prompt2.lower():
+					case 'y':community[i][j] =  1
+					case 'n':community[i][j] = -1
+					case '' :community[i][j] =  1
+					case _:print("Try again\n")		
+			elif prompt in ('n', ''):pass
+			j+=1
 		i+=1
 
-	with open(out, 'w') as f:
+	with open(out, 'w', newline='') as f:
 		write = csv.writer(f)
 		write.writerows(community)
 
@@ -95,23 +97,23 @@ def modularity():
 
 def modularity_(array :np.ndarray):
 	modularity = 0.0
-
-	edges = np.sum(array) / 2
+	edges = np.sum(np.abs(array)) / 2
 	nodes = array.shape[0]
-
-	degrees = np.sum(array, axis = 1)
+	degrees = np.sum(np.abs(array), axis = 1)
 
 	for i in range(nodes):
-		e = 0
 		for j in range(nodes):
 			if array[i][j]:
-				e+=1
-				
-		modularity = ( (nodes / edges) - (degrees[i]/ (2 * edges))**2 )
+				modularity += ( (nodes / edges) - (degrees[i]/ (2 * edges))**2 )
+				print(f"array at {i}, {j}: {array[i][j]} || Modularity at: {modularity}")
+
+	modularity = modularity / (2 * edges)
+
+	print(f"Total Edges: {edges} || Total Nodes: {nodes} || Total degrees: {degrees}")
 
 	return modularity
 
-def stat_vector(arr: np.ndarray):
+def stat_vector(arr: np.ndarray):#TODO
 	a = arr[0][0]
 	b = arr[0][1]
 	c = arr[0][2]
@@ -141,7 +143,7 @@ def page_rank(i: int, x: int):
 			i-=1
 			matrix_a = matrix_c
 
-def greedy_algorithm(c_m: numpy.ndarray, x: int):#TODO
+def greedy_algorithm(c_m: np.ndarray, x: int):#TODO
 	a = c_m.shape[0]
 
 	permuted_indices = np.random.permutation(a)
@@ -164,12 +166,69 @@ def greedy_algorithm(c_m: numpy.ndarray, x: int):#TODO
 			z = 0
 			i+=1
 
+def clustering_coefficient(array :np.ndarray, x: int) -> float:#TODO
+	c = 0.0
+	neighbors = np.where(array[x])[0]
+	k_i = len(neighbors)
+	#if k_i < 2: return c
+
+	e_i = np.sum(array[np.ix_(neighbors, neighbors)]) / 2 #Wrong?
+
+	c = (2 * e_i) / (k_i * (k_i  - 1))
+	print(f"Neighbors: {neighbors} || k_i: {k_i} || e_i: {e_i}")
+	return c
+
+def degree_distribution(arr: np.ndarray) -> np.ndarray:
+	dd = []
+	degree = []
+
+	for i in range(len(arr)): 
+		degree.append(sum(arr[i]))
+
+	total_degree = sum(degree)
+	
+	for d in degree:
+		distro = d / total_degree
+		dd.append(distro)
+
+	return np.ndarray(dd)
+
+def sas(p :float, q: float, r: float, c: int):
+	tr = p * c
+	sas = tr / (q + r)
+	return sas
+
+def input_csv(file_name: csv) -> np.ndarray:
+	with open(file_name, 'r') as file:
+		reader = csv.reader(file)
+		data = []
+		for idx, row in enumerate(reader):
+			if not any(row):#Skip empty rows
+				continue
+			processed_row = []
+			for value in row:
+				if value.lstrip('-').isdigit():
+					processed_row.append(int(value))
+				elif value == '':
+					processed_row.append(0)
+				else:
+					processed_row.append(None)
+			data.append(processed_row)
+
+	int_data = np.array(data)
+	return int_data
+
 def main():
-	print(" What do you want to do today?: \n 'm' for modularity calulator\n 'x' for matrix\n 'p' for page rank\n 'r' for random walk")
+	print(" What do you want to do today?: \n 'm' or 'mo' for modularity calulator\n 'x' for matrix\n 'p' for page rank\n 'r' for random walk\n 'c' for community matrix")
+	print(" 'cc' for clustering coefficiant\n 'dd' for degree distribution\n")
 	foo = input(str()).lower()
 	match foo:
 		case "m":
 			modularity()
+		case "mo":
+			com_graph = input_csv(str(input("Enter the name of the community graph csv file:\n")))
+			mod = modularity_(com_graph)
+			print(mod)
 		case "x":
 			x = int(input("Enter the size of the matrix: "))
 			print(matrix(x))
@@ -180,11 +239,22 @@ def main():
 		case "r":
 			i = int(input(" Enter size of matrix: \n"))
 			print(random_walk(i))
+		case "c":
+			community_matrix()
+		case "cc":
+			input_ = input_csv(str(input("Enter the name of the community graph csv file:\n")))
+			node = int(input("Enter the number of the node to calculte:\n"))
+			print(clustering_coefficient(input_, node))
+		case "dd":
+			input_ = input_csv(str(input("Enter the name of the community graph csv file:\n")))
+			print(degree_distribution(input_))
 		case "s":##TODO
 			k = np.zeros((3,3))
 			k[0][1] = k[0][2] = k[2][0] = k[2][1] = 0.5
 			k = page_rank(k, 2)
 			stat_vector(k)
+
+
 
 main()
 
