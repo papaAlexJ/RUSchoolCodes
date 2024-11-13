@@ -198,6 +198,9 @@ def sas(p :float, q: float, r: float, c: int):
 	sas = tr / (q + r)
 	return sas
 
+def foo():
+    return 0
+
 def input_csv(file_name: csv) -> np.ndarray:
 	with open(file_name, 'r') as file:
 		reader = csv.reader(file)
@@ -220,7 +223,7 @@ def input_csv(file_name: csv) -> np.ndarray:
 
 def main():
 	print(" What do you want to do today?: \n 'm' or 'mo' for modularity calulator\n 'x' for matrix\n 'p' for page rank\n 'r' for random walk\n 'c' for community matrix")
-	print(" 'cc' for clustering coefficiant\n 'dd' for degree distribution\n")
+	print(" 'cc' for clustering coefficiant\n 'dd' for degree distribution\n 'sas' for the sas formula\n")
 	foo = input(str()).lower()
 	match foo:
 		case "m":
